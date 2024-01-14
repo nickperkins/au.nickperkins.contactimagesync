@@ -1,18 +1,21 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityTypeRepository;
 
 /**
  * ContactImage.Sync API Test Case
  * This is a generic test class implemented with PHPUnit.
  * @group headless
  */
-class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
-  use \Civi\Test\Api3TestTrait;
-
+class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
   /**
    * @var int
    */
@@ -41,8 +44,8 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
     ));
     $userId = $ufMatch['values'][$this->contactId]['uf_id'];
     // delete the user from Drupal
-    $acconut = \Drupal::entityTypeManager()->getStorage('user')->load($userId);
-    $acconut->delete();
+    $account = \Drupal::entityTypeManager()->getStorage('user')->load($userId);
+    $account->delete();
     // delete the UF Match
     $this->callAPISuccess('UFMatch', 'delete', array(
       'contact_id' => $this->contactId,
@@ -68,10 +71,40 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
   public function setUp(): void {
     parent::setUp();
 
+    $container = new ContainerBuilder();
+
+    $entityTypeManager = $this
+      ->getMockBuilder(EntityTypeManagerInterface::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+    $container->set(EntityTypeManagerInterface::class, $entityTypeManager);
+
+    $entityTypeRepository = $this
+      ->getMockBuilder(EntityTypeRepository::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+    $container->set(EntityTypeRepository::class, $entityTypeRepository);
+    $entityStorageInterface = $this
+      ->getMockBuilder(EntityStorageInterface::class)
+      ->disableOriginalConstructor()
+      ->setMethods(get_class_methods(EntityStorageInterface::class))
+      ->getMock();
+
+    $container->set(EntityStorageInterface::class, $entityStorageInterface);
+    $userDrupal = $this
+      ->getMockBuilder(\Drupal\user\Entity\User::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+    $container->set('user', $userDrupal);
+    \Drupal::setContainer($container);
+
+    // Set the mock Drupal container
+    \Drupal::setContainer($container);
+
     // generate a fake email address
     $email = 'test' . time() . '@example.com';
     // create a contact
-    $this->contactId = $this->callAPISuccess('Contact', 'create', array(
+    $this->contactId = civicrm_api3('Contact', 'create', array(
       'contact_type' => 'Individual',
       'first_name' => 'Test',
       'last_name' => 'Contact',
@@ -80,8 +113,6 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
     ))['id'];
     // create a user in drupal and link to the contact
     $this->createDrupalUser($this->contactId, $email);
-
-
   }
 
   /**
@@ -91,13 +122,11 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
   public function tearDown(): void {
     parent::tearDown();
     // remove the drupal user and link to the contact
-    deleteDrupalUser($this->contactId);
+    $this->deleteDrupalUser($this->contactId);
     // remove the contact
     $this->callAPISuccess('Contact', 'delete', array(
       'id' => $this->contactId,
     ));
-
-
   }
 
   /**
@@ -109,5 +138,4 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
     $result = $this->callAPISuccess('ContactImage', 'sync', array('contact_id' => $this->contactId));
     $this->assertEquals([], $result['values']);
   }
-
 }
