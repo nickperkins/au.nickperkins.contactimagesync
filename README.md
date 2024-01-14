@@ -1,15 +1,18 @@
 # au.nickperkins.contactimagesync
 
-![Screenshot](/images/screenshot.png)
+Extension to assist with syncing CiviCRM contact images to CMS user profiles. The extension adds an APIv3 endpoint and a CiviRules action.
 
-(*FIXME: In one or two paragraphs, describe what the extension does and why one would download it. *)
+
+The extension currently only supports Drupal 8+.
 
 The extension is licensed under [AGPL-3.0](LICENSE.txt).
 
 ## Requirements
 
 * PHP v7.4+
-* CiviCRM (*FIXME: Version number*)
+* CiviCRM 5.61
+* [CiviRules](https://civicrm.org/extensions/civirules) (tested with 2.51)
+* Drupal 8+
 
 ## Installation (Web UI)
 
@@ -22,13 +25,13 @@ install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
 cd <extension-dir>
-cv dl au.nickperkins.contactimagesync@https://github.com/FIXME/au.nickperkins.contactimagesync/archive/master.zip
+cv dl au.nickperkins.contactimagesync@https://github.com/nickperkins/au.nickperkins.contactimagesync/archive/main.zip
 ```
-or
+<!-- or
 ```bash
 cd <extension-dir>
 cv dl au.nickperkins.contactimagesync@https://lab.civicrm.org/extensions/au.nickperkins.contactimagesync/-/archive/main/au.nickperkins.contactimagesync-main.zip
-```
+``` -->
 
 ## Installation (CLI, Git)
 
@@ -39,16 +42,18 @@ install it with the command-line tool [cv](https://github.com/civicrm/cv).
 git clone https://github.com/FIXME/au.nickperkins.contactimagesync.git
 cv en contactimagesync
 ```
-or
+<!-- or
 ```bash
 git clone https://lab.civicrm.org/extensions/au.nickperkins.contactimagesync.git
 cv en contactimagesync
-```
+``` -->
 
 ## Getting Started
 
-(* FIXME: Where would a new user navigate to get started? What changes would they see? *)
+Once enabled, this extension adds a new Civirule action named "Sync Contact Image to CMS".
 
-## Known Issues
+![Screenshot of the Add Action to CiviRule screen. The "Select Action" dropdown box shows the "Sync Contact Image to CMS" action](custom_action.png)
 
-(* FIXME *)
+It is possible to manually sync a contact image using the APIv3. Provide the CiviCRM contact ID to run the sync for.
+
+![Screenshot of the APIv3 Explorer showing the Entity: ContactImage and Action: sync.](apiv3.png)
