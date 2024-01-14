@@ -6,11 +6,11 @@ use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
 
 /**
- * ContactImage.Sync API Test Case
+ * Contact.Synccontactimage API Test Case
  * This is a generic test class implemented with PHPUnit.
  * @group headless
  */
-class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
+class api_v3_Contact_SynccontactimageTest extends \PHPUnit\Framework\TestCase implements HeadlessInterface, HookInterface, TransactionalInterface {
   use \Civi\Test\Api3TestTrait;
 
   /**
@@ -47,7 +47,7 @@ class api_v3_ContactImage_SyncTest extends \PHPUnit\Framework\TestCase implement
    * Note how the function name begins with the word "test".
    */
   public function testApiExample() {
-    $result = civicrm_api3('ContactImage', 'sync', array('magicword' => 'sesame'));
+    $result = civicrm_api3('Contact', 'synccontactimage', array('magicword' => 'sesame'));
     $this->assertEquals('Twelve', $result['values'][12]['name']);
   }
 
