@@ -5,6 +5,7 @@ use Civi\Test\CiviEnvBuilder;
 use Civi\Test\HeadlessInterface;
 use Civi\Test\HookInterface;
 use Civi\Test\TransactionalInterface;
+use Drupal\user\Entity\User;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -20,21 +21,11 @@ class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface
    * @var int
    */
   protected $contactId;
+  /** @var PHPUnit_Framework_MockObject_MockObject $user */
+  private $user;
 
   private function createDrupalUser($contactId, $mail) {
-    /** @var \Drupal\user\Entity\User $account */
-    $account = \Drupal::entityTypeManager()->getStorage('user')->create();
-    $account->setUsername($mail)->setEmail($mail);
 
-    $account->setPassword(FALSE);
-    $account->enforceIsNew();
-    $account->activate();
-
-    $this->callAPISuccess('UFMatch', 'create', array(
-      'contact_id' => $this->contactId,
-      'uf_id' => 1,
-      'uf_name' => 'testcontact',
-    ));
   }
 
   private function deleteDrupalUser($contactId) {
@@ -71,35 +62,45 @@ class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface
   public function setUp(): void {
     parent::setUp();
 
+    // Mock the load method of \Drupal\user\Entity\User
+    $user = $this->getMockBuilder(UserWrapper::class)
+      ->disableOriginalConstructor()
+      ->setMethods(['load'])
+      ->getMock();
+    $this->user = $user;
+
+    $user_data = (object)[
+      'first_name' => (object)[
+        'value' => 'test'
+      ],
+      'field_middle_name' => (object)[
+        'value' => 'test'
+      ],
+      'last_name' => (object)[
+        'value' => 'test'
+      ],
+      'mail' => (object)[
+        'value' => 'test@test.com'
+      ],
+      'field_telephone_number' => (object)[
+        'value' => '9876543210'
+      ],
+      'field_mobile_number' => (object)[
+        'value' => '9876543210'
+      ],
+      'user_picture' => (object)[
+        'value' => null
+      ],
+    ];
+
+    $this->user
+      ->method('load')
+      ->willReturn($user_data);
+
     $container = new ContainerBuilder();
-
-    $entityTypeManager = $this
-      ->getMockBuilder(EntityTypeManagerInterface::class)
-      ->disableOriginalConstructor()
-      ->getMock();
-    $container->set(EntityTypeManagerInterface::class, $entityTypeManager);
-
-    $entityTypeRepository = $this
-      ->getMockBuilder(EntityTypeRepository::class)
-      ->disableOriginalConstructor()
-      ->getMock();
-    $container->set(EntityTypeRepository::class, $entityTypeRepository);
-    $entityStorageInterface = $this
-      ->getMockBuilder(EntityStorageInterface::class)
-      ->disableOriginalConstructor()
-      ->setMethods(get_class_methods(EntityStorageInterface::class))
-      ->getMock();
-
-    $container->set(EntityStorageInterface::class, $entityStorageInterface);
-    $userDrupal = $this
-      ->getMockBuilder(\Drupal\user\Entity\User::class)
-      ->disableOriginalConstructor()
-      ->getMock();
-    $container->set('user', $userDrupal);
+    $container->set('user', $user);
     \Drupal::setContainer($container);
 
-    // Set the mock Drupal container
-    \Drupal::setContainer($container);
 
     // generate a fake email address
     $email = 'test' . time() . '@example.com';
@@ -111,8 +112,13 @@ class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface
       'email' => $email,
       'image_URL' => 'https://civicrm.org/sites/civicrm.org/files/civicrm/persist/contribute/images/2018-11-29_15-00-00.png',
     ))['id'];
-    // create a user in drupal and link to the contact
-    $this->createDrupalUser($this->contactId, $email);
+
+    // create a drupal user
+    civicrm_api3('UFMatch', 'create', array(
+      'contact_id' => $this->contactId,
+      'uf_id' => 1,
+      'uf_name' => 'test',
+    ));
   }
 
   /**
@@ -122,9 +128,11 @@ class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface
   public function tearDown(): void {
     parent::tearDown();
     // remove the drupal user and link to the contact
-    $this->deleteDrupalUser($this->contactId);
+    civicrm_api3('UFMatch', 'delete', array(
+      'contact_id' => $this->contactId,
+    ));
     // remove the contact
-    $this->callAPISuccess('Contact', 'delete', array(
+    civicrm_api3('Contact', 'delete', array(
       'id' => $this->contactId,
     ));
   }
@@ -135,7 +143,7 @@ class api_v3_ContactImage_SyncTest extends TestCase implements HeadlessInterface
    * Note how the function name begins with the word "test".
    */
   public function testApiExample() {
-    $result = $this->callAPISuccess('ContactImage', 'sync', array('contact_id' => $this->contactId));
+    $result = civicrm_api3('ContactImage', 'sync', array('contact_id' => $this->contactId));
     $this->assertEquals([], $result['values']);
   }
 }
