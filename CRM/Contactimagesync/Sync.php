@@ -29,36 +29,39 @@ class CRM_Contactimagesync_Sync {
 
     $image_url = $result['values'][0]['image_URL'];
 
-    if ($image_url) {
-      $result = civicrm_api3('UFMatch', 'get', [
-        'sequential' => 1,
-        'return' => ["uf_id"],
-        'contact_id' => $contact_id,
-      ]);
+    if (!$image_url) {
+      return [];
+    }
 
-      $drupal_user_id = $result['values'][0]['uf_id'];
+    $result = civicrm_api3('UFMatch', 'get', [
+      'sequential' => 1,
+      'return' => ["uf_id"],
+      'contact_id' => $contact_id,
+    ]);
 
-      if (!$drupal_user_id) {
-        // Not all users have a drupal accout so exit quietly
-        return [];
-      }
+    $cms_user_id = $result['values'][0]['uf_id'];
 
-      $drupal_user = \Drupal\user\Entity\User::load($drupal_user_id);
-      // get file extension from image url
-      $image_extension = pathinfo($image_url, PATHINFO_EXTENSION);
+    if (!$cms_user_id) {
+      // Not all users have a drupal accout so exit quietly
+      return [];
+    }
 
-      // Copy the image from the URL and set it as the Drupal user's picture
-      $image_data = file_get_contents($image_url);
-      if ($image_data !== false) {
-        // Save the image to the Drupal files directory
-        $file = \Drupal::service('file.repository')->writeData($image_data, 'public://'. $drupal_user_id . '.' . $image_extension, FileSystemInterface::EXISTS_REPLACE);
-        // Set the Drupal user's picture to the file we just saved
-        if ($file !== false) {
-          $drupal_user->set('user_picture', $file->id());
-          $drupal_user->save();
-        }
+    // get file extension from image url
+    $image_extension = pathinfo($image_url, PATHINFO_EXTENSION);
+
+    // Copy the image from the URL and set it as the Drupal user's picture
+    $image_data = file_get_contents($image_url);
+    if ($image_data !== false) {
+      // Save the image to the Drupal files directory
+      $file = \Drupal::service('file.repository')->writeData($image_data, 'public://' . $cms_user_id . '.' . $image_extension, FileSystemInterface::EXISTS_REPLACE);
+      // Set the Drupal user's picture to the file we just saved
+      if ($file !== false) {
+        $drupal_user = \Drupal\user\Entity\User::load($cms_user_id);
+        $drupal_user->set('user_picture', $file->id());
+        $drupal_user->save();
       }
     }
+
     return [];
   }
 }
