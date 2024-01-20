@@ -9,9 +9,18 @@ use CRM_Contactimagesync_ExtensionUtil as E;
 class CRM_Contactimagesync_Upgrader extends CRM_Extension_Upgrader_Base {
 
   public function install(): void {
+    $this->executeSqlFile('sql/install.sql');
+  }
 
-    if (!method_exists('CRM_Civirules_Utils_Upgrader', 'insertActionsFromJson'))
-      throw new Exception('Method CRM_Civirules_Utils_Upgrader::insertActionsFromJson() not found. Is the CiviRules extension enabled?');
-    CRM_Civirules_Utils_Upgrader::insertActionsFromJson($this->extensionDir . DIRECTORY_SEPARATOR . 'civirules_actions.json');
+  public function uninstall(): void {
+    $this->executeSqlFile('sql/uninstall.sql');
+  }
+
+  public function enable(): void {
+    $this->executeSqlFile('sql/enable.sql');
+  }
+
+  public function disable(): void {
+    $this->executeSqlFile('sql/disable.sql');
   }
 }
