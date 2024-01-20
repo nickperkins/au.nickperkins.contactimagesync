@@ -2,6 +2,6 @@
   {
     "name": "contactimage_sync",
     "label": "Sync Contact Image to CMS",
-    "class_name": "CRM_CivirulesActions_ContactImage_Sync"
+    "class_name": "CRM_Contactimagesync_CivirulesAction_Sync"
   }
-  ]
+]
