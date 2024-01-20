@@ -7,7 +7,7 @@ use CRM_Contactimagesync_ExtensionUtil as E;
  * Civirules action to sync a contact's image to the Drupal user's image
  */
 
-class CRM_ContactImage_CivirulesAction_Sync extends CRM_Civirules_Action {
+class CRM_Contactimagesync_CivirulesAction_Sync extends CRM_Civirules_Action {
 
   /**
    * Method to return the url for additional form processing for action
